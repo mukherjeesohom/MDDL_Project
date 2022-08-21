@@ -114,27 +114,3 @@ def NetworkMNIST(model_type):
         return BuildNetworkMNIST(backbone="residual")
     elif model_type == "pde":
         return BuildNetworkMNIST(backbone="pde")
-
-# @tf.function
-# def train_step():
-#     pass
-
-# def main(model_name="residual"):
-#     (train_images, train_labels), (test_images, test_labels) = datasets.mnist.load_data()
-#     train_images, test_images = train_images / 255.0, test_images / 255.0
-
-#     if len(train_images.shape) == 3:
-#         train_images = train_images.reshape(train_images.shape[0], train_images.shape[1], train_images.shape[2], 1)
-#         test_images = test_images.reshape(test_images.shape[0], test_images.shape[1], test_images.shape[2], 1)
-
-#     model = BuildNetworkMNIST(backbone=model_name)
-
-#     model.compile(optimizer='adam',
-#               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-#               metrics=['accuracy'])
-
-#     history = model.fit(train_images, train_labels, epochs=10, 
-#                     validation_data=(test_images, test_labels))
-
-# if __name__ == "__main__":
-#     main()
