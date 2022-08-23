@@ -12,7 +12,7 @@ def compute_params_flops(model, n_channels=3, n_size=32):
     print('MACs: {:,}'.format(flops))
 
 if __name__ =="__main__":
-    # Create a new model instance
+    # Create a new model instance; choose from: 'resnet32_global', 'resnet32'
     model_name = 'resnet32_global'
     model = ResNet(model_name, 10)
     compute_params_flops(model)

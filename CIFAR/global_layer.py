@@ -49,13 +49,12 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
         
         no_f = False
 
-        # Choose initialization block type
+        # Choose initialization block type from 'identity', 'BasicBlock'
         block_type = 'identity'
-        # block_type = 'BasicBlock'
 
         # Mode for PDE parameters Dx and Dy
-        # Choose from: 'constant', 'nonlinear_isotropic', 'learnable'
-        Dxy_mode = 'nonlinear_isotropic'
+        # Choose from: 'constant', 'nonlinear_isotropic', 'learnable', 'advection'
+        Dxy_mode = 'learnable'
 
         stride = 1
         in_chs = planes
@@ -116,9 +115,11 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
             f = h
 
         h0 = f  
-        g0 = h 
 
-        
+        # Choose between advection-diffusion equation and diffusion equation and advection equation
+        g0 = h                  # advection-diffusion or advection
+        # g0 = tf.zeros(h.shape)  # diffusion
+
         g = tf.keras.activations.relu(self.bng(self.convg(g0)))     # PDE parameter u
         g1 = tf.keras.activations.relu(self.bng1(self.convg1(g0)))  # PDE parameter v
             
@@ -130,6 +131,10 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
             print("===> Dxy mode constant...")
             Dx = self.cDx 
             Dy = self.cDy 
+        elif self.Dxy_mode == 'advection':
+            print("===> Dxy advection constant...")
+            Dx = 0.
+            Dy = 0.
         elif self.Dxy_mode == 'nonlinear_isotropic':
             print("===> Dxy mode nonlinear isotropic...")
             lambda_diffusion = 2.
@@ -141,29 +146,14 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
             print("===> Dxy mode learnable...")
             Dx  = tf.keras.activations.relu(self.bnDx(self.convDx(h)))  # PDE parameter Dx
             Dy  = tf.keras.activations.relu(self.bnDy(self.convDy(h)))  # PDE parameter Dy
-            print("Dx shape...", Dx.shape)
-
-
-        # print("Printing... g shape", g.shape)
 
         ux = (1. / (2*dx)) * ( tf.roll(g, dx, axis=2)  - tf.roll(g, -dx, axis=2) )
         vy = (1. / (2*dy)) * ( tf.roll(g1, dy, axis=3) - tf.roll(g1, -dy, axis=3) )
 
-        # Choose between advection-diffusion equation and diffusion equation and advection equation
-
-        # Advection-diffusion
         Ax = g  * (dt / dx)
         Ay = g1 * (dt / dy)
         Bx = Dx * (dt / (dx*dx))
         By = Dy * (dt / (dy*dy))
-
-        # # Diffusion
-        # Ax = 0
-        # Ay = 0
-
-        # # Advection
-        # Bx = 0
-        # By = 0
 
         E  = (ux + vy) * dt
         D = (1. / (1 + 2*Bx + 2*By))
