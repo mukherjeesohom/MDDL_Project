@@ -16,3 +16,6 @@ if __name__ =="__main__":
     model_name = 'resnet32_global'
     model = ResNet(model_name, 10)
     compute_params_flops(model)
+
+    model.build((None, 32, 32, 3))
+    model.summary()

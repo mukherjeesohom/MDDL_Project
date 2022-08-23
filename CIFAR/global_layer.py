@@ -27,7 +27,7 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
     def __init__(self, planes):
         super(GlobalFeatureBlock_Diffusion, self).__init__()
 
-        K = 2
+        K = 5
         nonlinear_pde = True
         pde_state = 0
 
@@ -48,17 +48,21 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
         drop_path_rate = 0.
         
         no_f = False
-        block_type = 'default'
 
-        # PDE parameters
-        constant_Dxy = False
+        # Choose initialization block type
+        block_type = 'identity'
+        # block_type = 'BasicBlock'
+
+        # Mode for PDE parameters Dx and Dy
+        # Choose from: 'constant', 'nonlinear_isotropic', 'learnable'
+        Dxy_mode = 'nonlinear_isotropic'
 
         stride = 1
         in_chs = planes
         out_chs = planes
 
         print('Global Feature Block Diffusion : (K, planes, nonlinear_pde, pde_state, block_type)', K, planes, nonlinear_pde, pde_state, block_type)
-        print('c_Dxy, dt, no_f, use_silu, use_res, cDx, cDy, init_h0_h, dx, dy, use_dot, use_cDs, drop_path_rate ', constant_Dxy, dt, no_f, use_silu, use_res, cDx, cDy, init_h0_h, dx, dy, use_dot, use_cDs, drop_path_rate)
+        print('c_Dxy, dt, no_f, use_silu, use_res, cDx, cDy, init_h0_h, dx, dy, use_dot, use_cDs, drop_path_rate ', Dxy_mode, dt, no_f, use_silu, use_res, cDx, cDy, init_h0_h, dx, dy, use_dot, use_cDs, drop_path_rate)
 
         self.pde_state = pde_state
         self.nonlinear_pde = nonlinear_pde
@@ -79,7 +83,7 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
         self.dt = dt
 
         # PDE parameters
-        self.constant_Dxy = constant_Dxy
+        self.Dxy_mode = Dxy_mode
 
         self.drop_path_rate = drop_path_rate
         self.stride = stride
@@ -89,8 +93,8 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
 
         # Choose uv from 'identity', 'FullConv', 'DwConv', 'BasicBlock', 'Bottleneck'
         custom_uv = 'DwConv'
-        self.convg  = get_init_block(planes, block_type = 'DwConv')
-        self.convg1 = get_init_block(planes, block_type = 'DwConv')
+        self.convg  = get_init_block(planes, block_type = custom_uv)
+        self.convg1 = get_init_block(planes, block_type = custom_uv)
 
         self.bng = layers.BatchNormalization()
         self.bng1 = layers.BatchNormalization()
@@ -122,14 +126,25 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
         dx = self.dx 
         dy = self.dy 
 
-        if self.constant_Dxy:
+        if self.Dxy_mode == 'constant':
+            print("===> Dxy mode constant...")
             Dx = self.cDx 
             Dy = self.cDy 
+        elif self.Dxy_mode == 'nonlinear_isotropic':
+            print("===> Dxy mode nonlinear isotropic...")
+            lambda_diffusion = 2.
+            sobel = tf.image.sobel_edges(h)
+            sobel = tf.math.reciprocal(tf.math.add(tf.math.divide(tf.math.square(sobel), (lambda_diffusion ** 2)), 1))
+            Dx = sobel[:, :, :, :, 0]
+            Dy = sobel[:, :, :, :, 1]
         else:
+            print("===> Dxy mode learnable...")
             Dx  = tf.keras.activations.relu(self.bnDx(self.convDx(h)))  # PDE parameter Dx
             Dy  = tf.keras.activations.relu(self.bnDy(self.convDy(h)))  # PDE parameter Dy
+            print("Dx shape...", Dx.shape)
 
-        print("Printing... g shape", g.shape)
+
+        # print("Printing... g shape", g.shape)
 
         ux = (1. / (2*dx)) * ( tf.roll(g, dx, axis=2)  - tf.roll(g, -dx, axis=2) )
         vy = (1. / (2*dy)) * ( tf.roll(g1, dy, axis=3) - tf.roll(g1, -dy, axis=3) )
@@ -142,11 +157,11 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
         Bx = Dx * (dt / (dx*dx))
         By = Dy * (dt / (dy*dy))
 
-        # Advection
+        # # Diffusion
         # Ax = 0
         # Ay = 0
 
-        # Diffusion
+        # # Advection
         # Bx = 0
         # By = 0
 

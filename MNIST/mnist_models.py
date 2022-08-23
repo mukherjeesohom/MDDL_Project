@@ -6,7 +6,7 @@ import tensorflow as tf
 from tensorflow.keras import datasets, layers, models
 
 class ConvBlock(tf.keras.Model):
-    def __init__(self, c_in, c_out, kernel_size=3, stride=1, padding=1, bias=False, K=1, backbone='residual'):
+    def __init__(self, c_in, c_out, kernel_size=3, stride=1, padding=1, bias=False, K=5, backbone='residual'):
         super(ConvBlock, self).__init__()
 
         self.f = layers.Conv2D(c_out, kernel_size=kernel_size, strides=stride, padding='same', use_bias=bias)
@@ -25,8 +25,9 @@ class ConvBlock(tf.keras.Model):
         K = self.K
 
         if self.backbone == "cnn":
-            h = self.g(tf.keras.activations.relu(self.bn_g(h)))
-            # h = tf.keras.activations.relu(self.bn_g(self.g(h)))
+            # h = self.g(tf.keras.activations.relu(self.bn_g(h)))
+            h = tf.keras.activations.relu(self.bn_g(self.g(h)))
+            g = h
 
         elif self.backbone == "residual":
 
@@ -34,6 +35,7 @@ class ConvBlock(tf.keras.Model):
             # h = h + tf.keras.activations.relu(self.bn_g(self.g(h)))
             h = self.bn_out(h)
             h = tf.keras.activations.relu(h)
+            g = h
 
         elif self.backbone == "pde":
             h0 = h
@@ -46,8 +48,16 @@ class ConvBlock(tf.keras.Model):
             dx = 1.
             dy = 1.
     
-            Dx = 1.
-            Dy = 1.
+            # # Const. Dxy default setup in paper Fig. 2
+            # Dx = 1.
+            # Dy = 1.
+
+            # Dxy for nonlinear isotropic diffusion
+            lambda_diffusion = 2.
+            sobel = tf.image.sobel_edges(h)
+            sobel = tf.math.reciprocal(tf.math.add(tf.math.divide(tf.math.square(sobel), (lambda_diffusion ** 2)), 1))
+            Dx = sobel[:, :, :, :, 0]
+            Dy = sobel[:, :, :, :, 1]
     
             ux = (1. / (2*dx)) * (tf.roll(g, 1, axis=2) - tf.roll(g, -1, axis=2))
             vy = (1. / (2*dy)) * (tf.roll(g1, 1, axis=3) - tf.roll(g1, -1, axis=3))
@@ -74,7 +84,7 @@ class ConvBlock(tf.keras.Model):
             h = self.bn_out(h)
             h = tf.keras.activations.relu(h)
 
-        return h
+        return h, g
 
 class BuildNetworkMNIST(tf.keras.Model):
     def __init__(self, backbone='residual', K=5):
@@ -90,7 +100,7 @@ class BuildNetworkMNIST(tf.keras.Model):
 
         if debug: print("x = ", x.shape)
         
-        x = self.conv(x)
+        x, g = self.conv(x)
         f1 = x
         if debug: print("conv1_x = ", x.shape)
 
@@ -105,7 +115,7 @@ class BuildNetworkMNIST(tf.keras.Model):
         output = self.fc(x)
         if debug: print("output_x = ", output.shape)
 
-        return output, f1, f2
+        return output, f1, f2, g
 
 def NetworkMNIST(model_type):
     if model_type == "cnn":
@@ -114,3 +124,27 @@ def NetworkMNIST(model_type):
         return BuildNetworkMNIST(backbone="residual")
     elif model_type == "pde":
         return BuildNetworkMNIST(backbone="pde")
+
+# @tf.function
+# def train_step():
+#     pass
+
+# def main(model_name="residual"):
+#     (train_images, train_labels), (test_images, test_labels) = datasets.mnist.load_data()
+#     train_images, test_images = train_images / 255.0, test_images / 255.0
+
+#     if len(train_images.shape) == 3:
+#         train_images = train_images.reshape(train_images.shape[0], train_images.shape[1], train_images.shape[2], 1)
+#         test_images = test_images.reshape(test_images.shape[0], test_images.shape[1], test_images.shape[2], 1)
+
+#     model = BuildNetworkMNIST(backbone=model_name)
+
+#     model.compile(optimizer='adam',
+#               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+#               metrics=['accuracy'])
+
+#     history = model.fit(train_images, train_labels, epochs=10, 
+#                     validation_data=(test_images, test_labels))
+
+# if __name__ == "__main__":
+#     main()

@@ -13,10 +13,10 @@ from mnist_models import *
 from utils import *
 
 parser = argparse.ArgumentParser(description='TensorFlow2.0 CIFAR-10 Training')
-parser.add_argument('--model', default="cnn", type=str, help='model type')
-parser.add_argument('--lr', default=1e-1, type=float, help='learning rate')
-parser.add_argument('--batch_size', default=128, type=int, help='batch size')
-parser.add_argument('--epoch', default=10, type=int, help='number of training epoch')
+parser.add_argument('--model', default="pde", type=str, help='model type')
+parser.add_argument('--lr', default=1e-2, type=float, help='learning rate')
+parser.add_argument('--batch_size', default=32, type=int, help='batch size')
+parser.add_argument('--epoch', default=100, type=int, help='number of training epoch')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
 parser.add_argument('--gpu', default=0, type=int, help='specify which gpu to be used')
 args = parser.parse_args()
@@ -47,7 +47,7 @@ class Model():
     @tf.function
     def train_step(self, images, labels):
         with tf.GradientTape() as tape:
-            predictions, f1, f2 = self.model(images, training=True)
+            predictions, f1, f2, g = self.model(images, training=True)
             # Cross-entropy loss
             ce_loss = self.loss_object(labels, predictions)
             # L2 loss(weight decay)
@@ -62,22 +62,24 @@ class Model():
 
     @tf.function
     def test_step(self, images, labels):
-        predictions, f1, f2 = self.model(images, training=False)
+        predictions, f1, f2, g = self.model(images, training=False)
         t_loss = self.loss_object(labels, predictions)
         self.test_loss(t_loss)
         self.test_accuracy(labels, predictions)
 
     def val_step(self, images, labels):
-        predictions, f1, f2 = self.model(images, training=False)
+        predictions, f1, f2, g = self.model(images, training=False)
         t_loss = self.loss_object(labels, predictions)
         plt.figure()
-        plt.imshow(  f1[0, :, :, 0].numpy() )
+        plt.imshow( images[1, :, :, 0].numpy() )
         plt.figure()
-        plt.imshow(  f2[0, :, :, 0].numpy() )
+        plt.imshow(  f1[1, :, :, 0].numpy() )
+        plt.figure()
+        plt.imshow(  g[1, :, :, 0].numpy() )
         plt.show()
         self.test_loss(t_loss)
         self.test_accuracy(labels, predictions)
-        # self.model.summary()
+        self.model.summary()
         
     def train(self, train_ds, test_ds, epoch):
         best_acc = tf.Variable(0.0)
