@@ -63,11 +63,8 @@ def ResNet(model_type, num_classes):
         return BuildResNet(BasicBlock, [2, 2, 2, 2], num_classes, global_ft=False)
     elif model_type == 'resnet18_global':
         return BuildResNet(BasicBlock, [1, 1, 1, 1], num_classes, global_ft=True)
-    elif model_type == 'resnet34':
-        return BuildResNet(BasicBlock, [3, 4, 6, 3], num_classes, global_ft=False)
-    elif model_type == 'resnet34_global':
+    elif model_type == 'resnet32':
+        return BuildResNet(BasicBlock, [5, 5, 5, 5], num_classes, global_ft=False)
+    elif model_type == 'resnet32_global':
         return BuildResNet(BasicBlock, [1, 1, 1, 1], num_classes, global_ft=True)
-    elif model_type == 'resnet50':
-        return BuildResNet(BottleNeck, [3, 4, 6, 3], num_classes, global_ft=False)
-    elif model_type == 'resnet50_global':
-        return BuildResNet(BottleNeck, [2, 2, 2, 2], num_classes, global_ft=True)
+

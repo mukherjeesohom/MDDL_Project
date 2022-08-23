@@ -26,6 +26,7 @@ args = parser.parse_args()
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
+
 class Model():
     def __init__(self, model_type, decay_steps, num_classes=10):
         self.model = ResNet(model_type, num_classes)

@@ -87,32 +87,18 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
         self.out_chs = out_chs
         self.planes = planes
 
-        # Choosing uv
-        # self.convg  = get_init_block(planes, block_type = 'identity')
-        # self.convg1 = get_init_block(planes, block_type = 'identity')
-        # self.convg  = get_init_block(planes, block_type = 'FullConv')
-        # self.convg1 = get_init_block(planes, block_type = 'FullConv')
+        # Choose uv from 'identity', 'FullConv', 'DwConv', 'BasicBlock', 'Bottleneck'
+        custom_uv = 'DwConv'
         self.convg  = get_init_block(planes, block_type = 'DwConv')
         self.convg1 = get_init_block(planes, block_type = 'DwConv')
-        # self.convg  = get_init_block(planes, block_type = 'BasicBlock')
-        # self.convg1 = get_init_block(planes, block_type = 'BasicBlock')
-        # self.convg  = get_init_block(planes, block_type = 'Bottleneck')
-        # self.convg1 = get_init_block(planes, block_type = 'Bottleneck')
 
         self.bng = layers.BatchNormalization()
         self.bng1 = layers.BatchNormalization()
 
-        # Choosing DxDy
-        # self.convDx = get_init_block(planes, block_type = 'identity')
-        # self.convDy = get_init_block(planes, block_type = 'identity')
-        # self.convDx = get_init_block(planes, block_type = 'FullConv')
-        # self.convDy = get_init_block(planes, block_type = 'FullConv')
-        self.convDx = get_init_block(planes, block_type = 'DwConv')
-        self.convDy = get_init_block(planes, block_type = 'DwConv')
-        # self.convDx = get_init_block(planes, block_type = 'BasicBlock')
-        # self.convDy = get_init_block(planes, block_type = 'BasicBlock')
-        # self.convDx = get_init_block(planes, block_type = 'Bottleneck')
-        # self.convDy = get_init_block(planes, block_type = 'Bottleneck')
+        # Choose DxDy from 'identity', 'FullConv', 'DwConv', 'BasicBlock', 'Bottleneck'
+        custom_dxy = 'DwConv'
+        self.convDx = get_init_block(planes, block_type = custom_dxy)
+        self.convDy = get_init_block(planes, block_type = custom_dxy)
 
         self.bnDx = layers.BatchNormalization()
         self.bnDy = layers.BatchNormalization()
@@ -143,15 +129,28 @@ class GlobalFeatureBlock_Diffusion(tf.keras.Model):
             Dx  = tf.keras.activations.relu(self.bnDx(self.convDx(h)))  # PDE parameter Dx
             Dy  = tf.keras.activations.relu(self.bnDy(self.convDy(h)))  # PDE parameter Dy
 
+        print("Printing... g shape", g.shape)
+
         ux = (1. / (2*dx)) * ( tf.roll(g, dx, axis=2)  - tf.roll(g, -dx, axis=2) )
         vy = (1. / (2*dy)) * ( tf.roll(g1, dy, axis=3) - tf.roll(g1, -dy, axis=3) )
 
+        # Choose between advection-diffusion equation and diffusion equation and advection equation
+
+        # Advection-diffusion
         Ax = g  * (dt / dx)
         Ay = g1 * (dt / dy)
         Bx = Dx * (dt / (dx*dx))
         By = Dy * (dt / (dy*dy))
-        E  = (ux + vy) * dt
 
+        # Advection
+        # Ax = 0
+        # Ay = 0
+
+        # Diffusion
+        # Bx = 0
+        # By = 0
+
+        E  = (ux + vy) * dt
         D = (1. / (1 + 2*Bx + 2*By))
 
         for k in range(self.K):
