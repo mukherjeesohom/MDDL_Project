@@ -13,7 +13,7 @@ from mnist_models import *
 from utils import *
 
 parser = argparse.ArgumentParser(description='TensorFlow2.0 CIFAR-10 Training')
-parser.add_argument('--model', default="pde", type=str, help='model type')
+parser.add_argument('--model', default="pde", type=str, help='model type; choose from: "cnn", "residual", "pde"')
 parser.add_argument('--lr', default=1e-2, type=float, help='learning rate')
 parser.add_argument('--batch_size', default=32, type=int, help='batch size')
 parser.add_argument('--epoch', default=100, type=int, help='number of training epoch')
