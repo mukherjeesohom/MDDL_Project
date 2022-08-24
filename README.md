@@ -26,7 +26,7 @@ python train.py --model resnet32_global
 We can also calculate the number of parameters and MACs for any model by running the script `calc_ops.py` with the desired `model_name`.
 
 ### (b) CIFAR-10 Ablations
-The CIFAR-1O ablations can be run using the same commands as above for CIFAR-10 baseline, but we need to make certain modifications in the script `global_layer.py` for different settings for each row in Table 2 of the report: 
+The CIFAR-10 ablations can be run using the same commands as above for CIFAR-10 baseline, but we need to make certain modifications in the script `global_layer.py` for different settings for each row in Table 2 of the report: 
 
 - For both velocity coeffficient and diffusivity as basic depth-wise convolution (default setup for the baseline experiments Table 2 -- Row 2): `Dxy_mode = 'learnable'`, `custom_uv = 'DwConv'`, `custom_dxy  = 'DwConv'`
 - For velocity coeffficient as identity and diffusivity as constant (Table 2 -- Row 3): `Dxy_mode = 'constant'` and `custom_uv = 'identity'`
