@@ -1,4 +1,4 @@
-# MDLL Project: Condensing CNNs with Partial Differential Equations
+# MDDL Project: Condensing CNNs with Partial Differential Equations
 
 In this project, we explore the so called Global layer proposed in [Kag and Saligrama [2022]](https://openaccess.thecvf.com/content/CVPR2022/papers/Kag_Condensing_CNNs_With_Partial_Differential_Equations_CVPR_2022_paper.pdf), which is a PDE-based feature layer aimed as capturing global receptive field without additional overheads of large kernel size or large depth which is common in existing CNN architectures. Such Global layers created by enforcing PDE constraints on feature maps have been suggested to create richer feature maps, and can be embedded in any existing CNN architecture reducing its depth. We conduct extensive experiments comparing Global layer-based CNNs versus existing CNN (across datasets and architectures as well as ablations studies), and arrive at the conclusion that the Global layer can successfully reduce the computational and storage budget of CNNs by a substantial amount at negligible of no loss in performance.
 
